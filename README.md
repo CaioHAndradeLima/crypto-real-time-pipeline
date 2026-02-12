@@ -1,175 +1,151 @@
-# Weather Data Pipeline
+# NYC Weather ELT Pipeline (NOAA)
 
 [![Weather Data Pipeline](https://github.com/CaioHAndradeLima/retail-data-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/CaioHAndradeLima/retail-data-pipeline/actions/workflows/ci.yml)
 
-> Generate a production‑grade, data‑driven ELT platform built from scratch only passing your snowflake credentials using
-> `make setup`.
+> Build a production-style ELT platform that ingests NOAA weather observations for New York City and delivers monthly rainfall indicators in Snowflake.
 
 ### No UI Clicks ever.
 
-<b>Everything</b> — sources, destinations, connections, syncs, and transformations — **is created programmatically**.
+<b>Everything</b> is configured through code: infrastructure, ingestion, orchestration, and transformations.
 
-- **Postgres** (OLTP Production data source)
-- **Airbyte** (ingestion + CDC)
-- **Airflow** (orchestration & lineage)
-- **dbt** (Silver & Gold transformations)
-- **Snowflake** (Lakehouse + Medallion Architecture)
+- **NOAA** (weather source for NYC observations)
+- **Airbyte** (connector-based ingestion flows)
+- **Airflow** (orchestration)
+- **dbt** (Silver and Gold transformations)
+- **Snowflake** (analytics warehouse)
 
-## You don’t scale pipelines. You scale patterns
+## You do not scale one pipeline. You scale a pattern
 
-You will generate your entire infra, <b>capable of deal 10 thousand new tables</b>, including all ingestion
-configuration between production source and Snowflake/Bronze, <b>without any effort</b>. You only need run `make setup`.
+This project is organized to ingest weather data continuously and answer analytics questions such as:
+
+- How many days did it rain in New York City each month?
+- What was total monthly precipitation in NYC?
+- Which periods are getting wetter or drier over time?
+
+The environment is reproducible locally with a clear `make` workflow.
 
 ## Quickstart (Makefile)
 
 ```bash
-# install python dependencies
-make bootstrap
+# 1) create .env with Snowflake credentials and local settings
+make create-env
 
-# full setup (creates .env, provisions Snowflake, starts local infra)
-make setup
+# 2) provision Snowflake resources via Terraform
+make provision-snowflake
 
-# manage local services
-make up
-make down
+# 3) generate dbt profile from .env
+make configure-dbt-profile
 
-# inspect available commands
+# optional: run the full setup chain
+make setup-local-environment
+
+# start/stop local services
+make start-local-infra
+make stop-local-infra
+
+# inspect all commands
 make help
 ```
 
-``` yml
-make setup execution
+```yml
+setup-local-environment execution
 
-Collect your Snowflake credentials and save into .env
+Collect Snowflake credentials and generate .env
    │
    ▼
-Create all Snowflake remote infrastructure via Terraform
+Provision Snowflake resources via Terraform
    │
    ▼
-Start Postgres db simulating real production environment 
-(Replace with real db info if you have one)
+Generate dbt profiles.yml
    │
    ▼
-Start Airbyte and connect with Postgres and Snowflake
-   │
-   ▼
-Discovers Postgres tables automatically and generate a ingestion.json
-   │
-   ▼
-Create all ingestion connection between Postgres-Snowflake based on ingestion.json
-   │
-   ▼
-Start Airflow and add Airbyte as a new connection
-   │
-   ▼
-Bronze/Silver/Gold DAG is ready to run
+Ready to start local infra and run NYC weather pipelines
 ```
+
 ---
 
 ## Airflow Orchestration
 
-### Data‑Driven Orchestration through Dynamic Airbyte Ingestion
-
+### Data-Driven Orchestration for NOAA Ingestion
 
 **Conceptual flow:**
 
-``` yml
+```yml
     DAG started
         │
         ▼
-recover airbyte connections
-  tables/columns to sync 
+trigger NOAA ingestion to BRONZE
         │
         ▼
-[ trigger_connection_1 ]──sensor results──┐
-[ trigger_connection_2 ]──sensor results──┼──► trigger_dbt_silver
-[ trigger_connection_3 ]──sensor results──┘            │
-                                                       ▼
-                                                 trigger_dbt_gold
+validate ingestion completion
+        │
+        ▼
+run dbt SILVER models
+        │
+        ▼
+run dbt GOLD models (monthly rain indicators)
 ```
-
 
 ---
 
-
-Airflow owns **execution**, not configuration.
-
+Airflow owns **execution**, not business logic.
 
 ```python
 with DAG(
-    dag_id="postgres_to_snowflake_bronze",
+    dag_id="noaa_to_snowflake_bronze",
     ...
 ) as dag:
-
-    # Discover automatically connections from Airbyte HTTP API
-    connections = discover_connections(client, tables)
-
-    # start ingestion sync of raw layer from postgres -> snowflake
-    sync = AirbyteTriggerSyncOperator(
-        task_id="sync_airbyte_connection",
-        pool="airbyte_sequential",
+    ingest = PythonOperator(
+        task_id="ingest_noaa_observations",
         ...
     )
 
-    # Keep listening ingestion success from Airbyte api
-    sensor = AirbyteJobSensor(
-        task_id="sensor_airbyte_connection",
-        airbyte_job_id=sync.output,
-        pool="airbyte_sequential",
-        ...
-    )
+    silver = EmptyOperator(task_id="Trigger_DBT_Silver")
+    gold = EmptyOperator(task_id="Trigger_DBT_Gold")
 
-    # Start Silver dbt 
-    end = EmptyOperator(
-        task_id="Trigger_DBT_Silver",
-        outlets=[WEATHER_BRONZE],
-    )
+    ingest >> silver >> gold
 ```
+
 ### Airflow Graph
 
 ![img.png](.images/airflow_graph.png)
 
 ## Configuration-driven Philosophy
 
-> **You inform your Snowflake account once. The platform builds itself through setup script.**
+> **Inform credentials once. Build and run everything from code.**
 
-- Discovers Airbyte connections programmatically
-- Triggers all connections in parallel
-- Waits for completion via sensors
-- No manual Airbyte UI configuration
-- No manual Airflow UI configuration
-- No manual Bronze/Raw configuration.
-- No more dags to add new tables.
-- No hardcoded pipelines per table
-- No fragile point‑to‑point DAGs
-- No ingestion headaches.
-- No dbt Bronze models are required (only for testing)
+- Infrastructure via Terraform
+- Ingestion orchestrated programmatically
+- Local environment lifecycle managed with `make`
+- No manual Airflow configuration steps for core flow
+- No manual Snowflake object creation
 
-The system is **data‑driven**: adding a table is a configuration change, not a new pipeline.
+The system is **configuration-driven**: changing sources or targets is a controlled code change.
 
 ---
 
-## High‑Level Architecture
+## High-Level Architecture
 
-``` yml
-Postgres (OLTP)  ───────────┐
-   │                        │
-   │  CDC / Incremental     │
-   ▼                        │
-Airbyte (API‑driven)        │
-   │                        │
-   │  Bulk load + dedup     │
-   ▼                        ┼──► Airbyte Orchestrator
-Snowflake                   │
-   ├── BRONZE               │
-   ├── SILVER               │
-   └── GOLD                 │
-   │                        │
-   ▼                        │
-BI / Analytics  ◄───────────┘
+```yml
+NOAA Source (NYC)  ───────────┐
+   │                          │
+   │  Weather observations    │
+   ▼                          │
+Ingestion Layer               │
+   │                          │
+   │  Load raw data           │
+   ▼                          ┼──► Airflow Orchestrator
+Snowflake                     │
+   ├── BRONZE                 │
+   ├── SILVER                 │
+   └── GOLD                   │
+   │                          │
+   ▼                          │
+BI / Analytics  ◄─────────────┘
 ```
 
 ---
+
 ## Continuous integration Flow
 
 [![Weather Data Pipeline](https://github.com/CaioHAndradeLima/retail-data-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/CaioHAndradeLima/retail-data-pipeline/actions/workflows/ci.yml)
@@ -185,40 +161,41 @@ Formatting Check        │
    ├── Black            │
    │                    │
    ▼                    │
-Validate Dag imports    │
-   ├── Airflow          ┼──► Github Actions
+Validate DAG imports    │
+   ├── Airflow          ┼──► GitHub Actions
    │                    │
    ▼                    │
-Validate DBT            │
+Validate dbt            │
    ├── SILVER           │
    └── GOLD             │
    │                    │
    ▼                    │
-BI / Analytics  ────────┘
+Analytics Ready ────────┘
 ```
 
 ---
 
 ## Ingestion Details
 
-- Postgres tables are ingested via **Airbyte**
-- Mix of **CDC** and **incremental batch**
-- Deduplication handled by Airbyte (`append_dedup`)
+- NOAA observations are ingested for New York City
+- Raw data lands in **BRONZE**
+- dbt models standardize and enrich in **SILVER**
+- Business metrics are published in **GOLD**
 
 ---
 
 ## Snowflake via Terraform
 
-All Snowflake structure is defined by Terraform Architecture, including:
+Snowflake resources are provisioned and managed by Terraform, including:
 
-- Configure warehouses
-- Manage roles, grants, and permissions
-- Prepare the environment for dbt transformations
+- Warehouse configuration
+- Role and grants management
+- Database and schema setup for dbt layers
 
 ```yml
 infra/remote/snowflake/
 ├── setup/
-│   ├── generate_terraform_user.sh 
+│   ├── generate_terraform_user.sh
 │   ├── install_local_cli.sh
 │   └── roles.sql
 │
@@ -229,67 +206,43 @@ infra/remote/snowflake/
 ├── variables.tf
 └── versions.tf
 ```
+
 ---
 
 ## Local Infra
+
 ```yml
 infra/local
-├── postgres/               # Airbyte ingestion tool directory
-├── airbyte/                # Airbyte ingestion tool directory
-├── airflow/                # Orchestrator directory
-|
-├── start_containers.sh     # Used by `make up`
-├── stop_containers.sh      # Used by `make down`
+├── postgres/
+├── airbyte/
+└── airflow/
 ```
-
 
 ### Postgres configuration-driven flow
 
 ```yml
 └── init/
-    ├── 01_wal_level_setup.sql  # SET wal_level = logical;
-    │                                        
-    ├── 02_init_retail_oltp.sql # Create tables
-    │
-    ├── 03_data.sql             # Populate tables with fake data
-    │                                        
-    ├── 04_cdc.sql              # Enable CDC replication
-    │                                        
-    └── 05_airbyte_user.sql     # Create CDC Airbyte User
+    ├── 01_wal_level_setup.sql   # Logical replication settings
+    ├── 02_init_retail_oltp.sql  # Local source schema bootstrap (legacy filename)
+    ├── 03_cdc.sql               # CDC support
+    └── 05_airbyte_user.sql      # Airbyte user and grants
 ```
 
 ### Airbyte configuration-driven flow
 
 ```yml
-brew_install_airbyte_abctl.sh  ─────────────┐
-   ├── Install Airbyte via abctl            │
-   │                                        │
-   ▼                                        │
-setup_credentials.sh                        │
-   ├── Setup email/organizaton data         │
-   │                                        │
-   ▼                                        │
-setup_postgres_source.sh                    │
-   ├── Add source connection                │
-   │                                        │
-   ▼                                        │
-setup_snowflake_destination.sh              │
-   ├── Add Snowflake connection             │
-   │                                        │
-   ▼                                        │
-generate_ingestion.json.sh                  │
-   ├── Read Postgres Source                 │
-   └── Create ingestion tables/connections  │
-   └── insert into ingestion.json           │
-   │                                        │
-   ▼                                        │
-create_connections.sh                       │
-   ├── Read ingestion.json                  │
-   ├── Architecture ingestion connection    │
-   ├── Add or update all ingestion process  │
-   │                                        │
-   ▼                                        │
-Start Airflow  ◄────────────────────────────┘
+start_airbyte.sh             ──────────────┐
+   ├── Start Airbyte local stack           │
+   │                                       │
+   ▼                                       │
+setup_credentials.sh                       │
+setup_postgres_source.sh                   │
+setup_snowflake_destination.sh             │
+generate_ingestion_json.sh                 │
+create_connections.sh                      │
+   │                                       │
+   ▼                                       │
+Start Airflow  ◄───────────────────────────┘
 ```
 
 ### Airflow orchestrator
@@ -298,31 +251,22 @@ Start Airflow  ◄────────────────────�
 Container starts  ──────────────┐
    │                            │
    ▼                            │
-init_connections.sh             │
-   ├── add airbyte connection   │
-   │                            │
+Load DAGs                       │
+   ├── Bronze ingestion         │
+   ├── Silver transformation    │
+   └── Gold transformation      │
    ▼                            │
-Start Weather Pipeline           │
-   ├── Bronze                   │
-   ├── Silver                   │
-   ├── Gold                     │
-   ▼                            │
-Data Available  ◄───────────────┘
+NYC weather metrics ready ◄─────┘
 ```
 
 ## Weather Business Questions
 
-The postgres used has tables and data designed to answer typical retail business questions such as:
+The pipeline is designed to answer weather analytics questions for New York City, such as:
 
-- How many orders are created per day?
-- How much revenue is generated?
-- What is the order conversion rate?
-- Which products generate the most revenue?
-- What percentage of orders are canceled or refunded?
-- How long does it take for an order to move from created from shipped to delivered?
-
-CDC is enabled for the `orders` table in the OLTP database. All other tables are ingested using a batch approach.
-
+- How many days did it rain in NYC per month?
+- What is total monthly precipitation in NYC?
+- How does rainfall vary by season?
+- Which months are above historical rainfall average?
 
 ## dbt Strategy
 
@@ -330,8 +274,8 @@ dbt is executed via **CLI orchestration**, intentionally simple:
 
 | Approach         | Reason                     |
 |------------------|----------------------------|
-| CLI‑based dbt    | Low complexity, easy CI/CD |
+| CLI-based dbt    | Low complexity, easy CI/CD |
 | No Cosmos        | Avoid DAG explosion        |
-| Layer‑level runs | Clear failure domains      |
+| Layer-level runs | Clear failure domains      |
 
 ---
