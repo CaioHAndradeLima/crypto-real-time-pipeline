@@ -3,7 +3,7 @@
 [![Weather Data Pipeline](https://github.com/CaioHAndradeLima/retail-data-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/CaioHAndradeLima/retail-data-pipeline/actions/workflows/ci.yml)
 
 > Generate a production‑grade, data‑driven ELT platform built from scratch only passing your snowflake credentials using
-> setup.sh
+> `make setup`.
 
 ### No UI Clicks ever.
 
@@ -18,10 +18,27 @@
 ## You don’t scale pipelines. You scale patterns
 
 You will generate your entire infra, <b>capable of deal 10 thousand new tables</b>, including all ingestion
-configuration between production source and Snowflake/Bronze, <b>without any effort</b>. You only need run `setup.sh`.
+configuration between production source and Snowflake/Bronze, <b>without any effort</b>. You only need run `make setup`.
+
+## Quickstart (Makefile)
+
+```bash
+# install python dependencies
+make bootstrap
+
+# full setup (creates .env, provisions Snowflake, starts local infra)
+make setup
+
+# manage local services
+make up
+make down
+
+# inspect available commands
+make help
+```
 
 ``` yml
-./setup.sh execution
+make setup execution
 
 Collect your Snowflake credentials and save into .env
    │
@@ -221,8 +238,8 @@ infra/local
 ├── airbyte/                # Airbyte ingestion tool directory
 ├── airflow/                # Orchestrator directory
 |
-├── start_containers.sh     # Start all local infra script
-├── stop_containers.sh      # Stop all local infra script
+├── start_containers.sh     # Used by `make up`
+├── stop_containers.sh      # Used by `make down`
 ```
 
 

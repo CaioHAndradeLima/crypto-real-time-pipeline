@@ -3,7 +3,7 @@ weather_pipeline:
   outputs:
     dev:
       type: snowflake
-      account: vvyellg-cr56839
+      account: cr56839
       user: CAIOHANDRADELIMA
       password: Otr@conta1Health
       role: ACCOUNTADMIN
