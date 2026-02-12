@@ -28,27 +28,27 @@ The environment is reproducible locally with a clear `make` workflow.
 
 ```bash
 # 1) create .env with Snowflake credentials and local settings
-make create-env
+make setup.create-env
 
 # 2) provision Snowflake resources via Terraform
-make provision-snowflake
+make setup.provision-snowflake
 
 # 3) generate dbt profile from .env
-make configure-dbt-profile
+make setup.configure-dbt-profile
 
 # optional: run the full setup chain
-make setup-local-environment
+make setup.local-development-environment
 
 # start/stop local services
-make start-local-infra
-make stop-local-infra
+make infra.up
+make infra.down
 
 # inspect all commands
 make help
 ```
 
 ```yml
-setup-local-environment execution
+setup.local-development-environment execution
 
 Collect Snowflake credentials and generate .env
    │
