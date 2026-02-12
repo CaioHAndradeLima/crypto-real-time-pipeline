@@ -17,7 +17,7 @@ select
     min(observation_time_utc) as first_observation,
     max(observation_time_utc) as last_observation
 
-from {{ ref('weather_observations_clean') }}
+from {{ ref('trading_observations_clean') }}
 
 {% if is_incremental() %}
 where observation_date >= (

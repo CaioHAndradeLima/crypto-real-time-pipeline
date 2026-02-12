@@ -2,7 +2,7 @@ version: 2
 
 sources:
   - name: silver
-    database: WEATHER_ANALYTICS
+    database: TRADING_ANALYTICS
     schema: SILVER
     tables:
-      - name: weather_observations_clean
+      - name: trading_observations_clean

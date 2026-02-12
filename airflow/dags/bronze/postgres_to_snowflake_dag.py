@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 
 from src.ingestion.airbyte.tasks import list_connections
 from src.ingestion.airbyte.task_groups import airbyte_connection_group
-from src.lineage.datasets import WEATHER_BRONZE, WEATHER_INGESTION
+from src.lineage.datasets import TRADING_BRONZE, TRADING_INGESTION
 
 load_dotenv()
 
@@ -25,7 +25,7 @@ with DAG(
     start_date=datetime(2024, 1, 1),
     catchup=False,
     tags=["bronze", "airbyte"],
-    schedule=[WEATHER_INGESTION],
+    schedule=[TRADING_INGESTION],
     max_active_tasks=1,
     default_args=DEFAULT_ARGS,
 ) as dag:
@@ -35,8 +35,8 @@ with DAG(
     mapped_airbyte_group = airbyte_connection_group.expand_kwargs(connections)
 
     publish_dataset = EmptyOperator(
-        task_id="publish_weather_bronze",
-        outlets=[WEATHER_BRONZE],
+        task_id="publish_trading_bronze",
+        outlets=[TRADING_BRONZE],
     )
 
     mapped_airbyte_group >> publish_dataset

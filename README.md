@@ -1,14 +1,14 @@
-# NYC Weather ELT Pipeline (NOAA)
+# NYC Trading ELT Pipeline (NOAA)
 
-[![Weather Data Pipeline](https://github.com/CaioHAndradeLima/retail-data-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/CaioHAndradeLima/retail-data-pipeline/actions/workflows/ci.yml)
+[![Trading Data Pipeline](https://github.com/CaioHAndradeLima/retail-data-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/CaioHAndradeLima/retail-data-pipeline/actions/workflows/ci.yml)
 
-> Build a production-style ELT platform that ingests NOAA weather observations for New York City and delivers monthly rainfall indicators in Snowflake.
+> Build a production-style ELT platform that ingests NOAA trading observations for New York City and delivers monthly rainfall indicators in Snowflake.
 
 ### No UI Clicks ever.
 
 <b>Everything</b> is configured through code: infrastructure, ingestion, orchestration, and transformations.
 
-- **NOAA** (weather source for NYC observations)
+- **NOAA** (trading source for NYC observations)
 - **Airbyte** (connector-based ingestion flows)
 - **Airflow** (orchestration)
 - **dbt** (Silver and Gold transformations)
@@ -16,7 +16,7 @@
 
 ## You do not scale one pipeline. You scale a pattern
 
-This project is organized to ingest weather data continuously and answer analytics questions such as:
+This project is organized to ingest trading data continuously and answer analytics questions such as:
 
 - How many days did it rain in New York City each month?
 - What was total monthly precipitation in NYC?
@@ -59,7 +59,7 @@ Provision Snowflake resources via Terraform
 Generate dbt profiles.yml
    │
    ▼
-Ready to start local infra and run NYC weather pipelines
+Ready to start local infra and run NYC trading pipelines
 ```
 
 ---
@@ -129,7 +129,7 @@ The system is **configuration-driven**: changing sources or targets is a control
 ```yml
 NOAA Source (NYC)  ───────────┐
    │                          │
-   │  Weather observations    │
+   │  Trading observations    │
    ▼                          │
 Ingestion Layer               │
    │                          │
@@ -148,7 +148,7 @@ BI / Analytics  ◄─────────────┘
 
 ## Continuous integration Flow
 
-[![Weather Data Pipeline](https://github.com/CaioHAndradeLima/retail-data-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/CaioHAndradeLima/retail-data-pipeline/actions/workflows/ci.yml)
+[![Trading Data Pipeline](https://github.com/CaioHAndradeLima/retail-data-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/CaioHAndradeLima/retail-data-pipeline/actions/workflows/ci.yml)
 
 ```bash
 Steps
@@ -256,12 +256,12 @@ Load DAGs                       │
    ├── Silver transformation    │
    └── Gold transformation      │
    ▼                            │
-NYC weather metrics ready ◄─────┘
+NYC trading metrics ready ◄─────┘
 ```
 
-## Weather Business Questions
+## Trading Business Questions
 
-The pipeline is designed to answer weather analytics questions for New York City, such as:
+The pipeline is designed to answer trading analytics questions for New York City, such as:
 
 - How many days did it rain in NYC per month?
 - What is total monthly precipitation in NYC?

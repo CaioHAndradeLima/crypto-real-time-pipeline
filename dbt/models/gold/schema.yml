@@ -1,8 +1,8 @@
 version: 2
 
 models:
-  - name: weather_daily_rain
-    description: Daily weather aggregates per station
+  - name: trading_daily_rain
+    description: Daily trading aggregates per station
 
     tests:
       - dbt_utils.unique_combination_of_columns:
@@ -36,9 +36,9 @@ models:
         tests: [not_null]
 
 
-# weather monthly tests
+# trading monthly tests
 
-  - name: weather_monthly_station_rain
+  - name: trading_monthly_station_rain
     description: Monthly precipitation summary per station
 
     tests:
@@ -72,9 +72,9 @@ models:
           - dbt_utils.expression_is_true:
               expression: "value <= days_with_data"
 
-# weather rainy
+# trading rainy
 
-  - name: weather_monthly_region_rain
+  - name: trading_monthly_region_rain
     description: Monthly regional rain summary
 
     tests:

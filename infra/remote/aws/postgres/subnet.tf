@@ -7,7 +7,7 @@ resource "aws_subnet" "public" {
   map_public_ip_on_launch = true
 
   tags = {
-    Name = "weather-public-${count.index + 1}"
+    Name = "trading-public-${count.index + 1}"
   }
 }
 
@@ -19,7 +19,7 @@ resource "aws_subnet" "private" {
   availability_zone = var.availability_zones[count.index]
 
   tags = {
-    Name = "weather-private-${count.index + 1}"
+    Name = "trading-private-${count.index + 1}"
   }
 }
 
@@ -27,7 +27,7 @@ resource "aws_internet_gateway" "this" {
   vpc_id = aws_vpc.this.id
 
   tags = {
-    Name = "weather-igw"
+    Name = "trading-igw"
   }
 }
 
@@ -40,7 +40,7 @@ resource "aws_route_table" "private" {
   }
 
   tags = {
-    Name = "weather-private-rt"
+    Name = "trading-private-rt"
   }
 }
 

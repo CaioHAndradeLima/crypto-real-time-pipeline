@@ -11,7 +11,7 @@ with region_daily as (
     select
         observation_date,
         max(iff(was_raining, 1, 0)) = 1 as region_was_raining
-    from {{ ref('weather_daily_rain') }}
+    from {{ ref('trading_daily_rain') }}
 
     {% if is_incremental() %}
     where observation_date >= (

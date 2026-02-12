@@ -6,11 +6,11 @@ brew install --cask snowflake-snowsql
 # to figure the information run in snowflake dashboard sql:
 # SELECT CURRENT_ACCOUNT(), CURRENT_USER(), CURRENT_REGION(), CURRENT_ROLE();
 
-snowsql -a vvyellg-cr56839 \
+snowsql -a cr56839-VVYELLG \
         -u CAIOHANDRADELIMA \
         -r ACCOUNTADMIN \
         -w COMPUTE_WH \
-        -d weather_ANALYTICS \
+        -d trading_ANALYTICS \
         -s BRONZE \
         -o log_level=DEBUG
 

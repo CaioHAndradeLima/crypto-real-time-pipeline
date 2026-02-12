@@ -13,10 +13,10 @@ select
     barometric_pressure_pa,
     visibility_m,
     precipitation_last_3h_mm,
-    weather_description,
+    trading_description,
     longitude,
     latitude,
     elevation_m,
     payload,
     ingested_at
-from weather.bronze.observations
+from trading.bronze.observations

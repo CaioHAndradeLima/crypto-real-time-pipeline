@@ -1,8 +1,8 @@
 version: 2
 
 models:
-  - name: weather_observations_clean
-    description: Cleaned NOAA weather observations with derived rain indicators
+  - name: trading_observations_clean
+    description: Cleaned NOAA trading observations with derived rain indicators
     columns:
 
       - name: station_id

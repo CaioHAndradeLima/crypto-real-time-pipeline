@@ -14,7 +14,7 @@ DBT_PROFILES_FILE="$DBT_DIR/profiles.yml"
 mkdir -p "$DBT_DIR"
 
 cat >"$DBT_PROFILES_FILE" <<EOF
-weather_pipeline:
+trading_pipeline:
   target: dev
   outputs:
     dev:

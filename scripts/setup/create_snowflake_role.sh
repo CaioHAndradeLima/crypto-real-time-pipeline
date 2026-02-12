@@ -10,13 +10,11 @@ echo "Create Snowflake role and terraform user"
 load_env
 require_cmd snowsql
 
-SNOWSQL_PWD="$SNOWFLAKE_PASSWORD"
-
 echo "May you need inform you Snowflake Account password"
 echo ""
 
-snowsql \
-  -a "$SNOWFLAKE_ACCOUNT-$SNOWFLAKE_ORGANIZATION_NAME" \
+SNOWSQL_PWD="$SNOWFLAKE_PASSWORD" snowsql \
+  -a "$SNOWFLAKE_ORGANIZATION_NAME-$SNOWFLAKE_ACCOUNT" \
   -u "$SNOWFLAKE_USER" \
   -r "$SNOWFLAKE_ROLE" \
   -w "$SNOWFLAKE_WAREHOUSE" \

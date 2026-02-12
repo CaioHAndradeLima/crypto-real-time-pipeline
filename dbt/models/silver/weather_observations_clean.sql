@@ -26,10 +26,10 @@ with base as (
 
         (
           coalesce(precipitation_last_3h_mm, 0) > 0
-          OR coalesce(weather_description, '') ilike '%rain%'
+          OR coalesce(trading_description, '') ilike '%rain%'
         ) as is_raining,
 
-        weather_description,
+        trading_description,
 
         longitude,
         latitude,

@@ -7,10 +7,18 @@ LOCAL_INFRA_DIR="$PROJECT_ROOT/infra/local"
 AIRBYTE_DIR="$LOCAL_INFRA_DIR/airbyte"
 POSTGRES_COMPOSE_FILE="$LOCAL_INFRA_DIR/postgres/docker-compose.yml"
 AIRFLOW_COMPOSE_FILE="$LOCAL_INFRA_DIR/airflow/docker-compose.yml"
+KAFKA_CONNECT_COMPOSE_FILE="$LOCAL_INFRA_DIR/kafka-connect/docker-compose.yml"
 
 require_env_file() {
   if [ ! -f "$ENV_FILE" ]; then
     echo "Missing $ENV_FILE. Run 'make create-env' first."
+    exit 1
+  fi
+}
+
+require_cmd() {
+  if ! command -v "$1" >/dev/null 2>&1; then
+    echo "Required command not found: $1"
     exit 1
   fi
 }

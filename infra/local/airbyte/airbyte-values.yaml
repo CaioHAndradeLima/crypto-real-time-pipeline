@@ -1,6 +1,0 @@
-global:
-  airbyteVersion: 2.0.1
-
-airbyte-db:
-  image:
-    tag: 1.7.0-17

@@ -14,7 +14,7 @@ select
     count(*) as days_with_data,
     sum(iff(was_raining, 1, 0)) as rainy_days
 
-from {{ ref('weather_daily_rain') }}
+from {{ ref('trading_daily_rain') }}
 
 {% if is_incremental() %}
 where date_trunc('month', observation_date) >= (

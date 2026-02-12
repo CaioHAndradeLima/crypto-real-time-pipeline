@@ -1,4 +1,4 @@
-weather_pipeline:
+trading_pipeline:
   target: dev
   outputs:
     dev:
@@ -7,7 +7,7 @@ weather_pipeline:
       user: CAIOHANDRADELIMA
       password: Otr@conta1Health
       role: ACCOUNTADMIN
-      warehouse: WEATHER_WH
-      database: WEATHER_ANALYTICS
+      warehouse: TRADING_WH
+      database: TRADING_ANALYTICS
       schema: BRONZE
       threads: 4

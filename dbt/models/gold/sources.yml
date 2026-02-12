@@ -2,9 +2,9 @@ version: 2
 
 sources:
   - name: gold
-    database: WEATHER_ANALYTICS
+    database: TRADING_ANALYTICS
     schema: GOLD
     tables:
-      - name: weather_daily_rain
-      - name: weather_monthly_precipitation
-      - name: weather_rainy_days_monthly
+      - name: trading_daily_rain
+      - name: trading_monthly_precipitation
+      - name: trading_rainy_days_monthly
