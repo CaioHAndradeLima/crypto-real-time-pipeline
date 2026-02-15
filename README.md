@@ -1,89 +1,106 @@
-# NYC Trading ELT Pipeline (NOAA)
+# Crypto Trading ELT Real Time Pipeline
 
 [![Trading Data Pipeline](https://github.com/CaioHAndradeLima/retail-data-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/CaioHAndradeLima/retail-data-pipeline/actions/workflows/ci.yml)
 
-> Build a production-style ELT platform that ingests NOAA trading observations for New York City and delivers monthly rainfall indicators in Snowflake.
+> Build a production-style ELT streaming platform that ingests Binance trades in real time and serves curated analytics in Snowflake.
 
 ### No UI Clicks ever.
 
 <b>Everything</b> is configured through code: infrastructure, ingestion, orchestration, and transformations.
 
-- **NOAA** (trading source for NYC observations)
-- **Airbyte** (connector-based ingestion flows)
+- **Binance WebSocket** (trade source)
+- **Kafka + Kafka Connect** (stream transport and Snowflake sink)
 - **Airflow** (orchestration)
-- **dbt** (Silver and Gold transformations)
+- **Snowflake Dynamic Tables** (Silver and Gold transformations)
 - **Snowflake** (analytics warehouse)
 
 ## You do not scale one pipeline. You scale a pattern
 
 This project is organized to ingest trading data continuously and answer analytics questions such as:
 
-- How many days did it rain in New York City each month?
-- What was total monthly precipitation in NYC?
-- Which periods are getting wetter or drier over time?
+- Is the stream healthy and fresh right now?
+- How many trades and notional volume are observed per minute?
+- Are Silver/Gold transformations up to date and deduplicated?
 
 The environment is reproducible locally with a clear `make` workflow.
 
 ## Quickstart (Makefile)
 
 ```bash
-# 1) create .env with Snowflake credentials and local settings
-make setup.create-env
+# Full setup from scratch (new machine / new Snowflake account)
+make setup.from-scratch
 
-# 2) provision Snowflake resources via Terraform
-make setup.provision-snowflake
+# Full runtime infra from scratch (airflow + kafka/connect + sink + websocket)
+make infra.from-scratch
 
-# 3) generate dbt profile from .env
-make setup.configure-dbt-profile
-
-# optional: run the full setup chain
-make setup.local-development-environment
-
-# start/stop local services
+# Start only Airflow
 make infra.up
+
+# Start full runtime infra
+make infra.up-all
+
+# Stop local containers
 make infra.down
 
-# inspect all commands
+# List all commands
 make help
 ```
 
 ```yml
-setup.local-development-environment execution
+setup.from-scratch execution
 
-Collect Snowflake credentials and generate .env
+Check local dependencies
+   │
+   ▼
+Generate .env
    │
    ▼
 Provision Snowflake resources via Terraform
    │
    ▼
-Generate dbt profiles.yml
+Generate Snowflake key-pair auth
    │
    ▼
-Ready to start local infra and run NYC trading pipelines
+Create streaming Dynamic Tables
+   │
+   ▼
+Ready to run full local streaming stack
 ```
 
 ---
 
 ## Airflow Orchestration
 
-### Data-Driven Orchestration for NOAA Ingestion
+### Streaming Operations DAGs
 
-**Conceptual flow:**
+Airflow orchestrates runtime operations for the streaming pipeline:
 
 ```yml
-    DAG started
-        │
-        ▼
-trigger NOAA ingestion to BRONZE
-        │
-        ▼
-validate ingestion completion
-        │
-        ▼
-run dbt SILVER models
-        │
-        ▼
-run dbt GOLD models (monthly rain indicators)
+bootstrap_streaming_stack (manual)
+  configure Snowflake sink connector
+  apply Dynamic Table definitions
+
+streaming_healthcheck (every 5 min)
+  connector status check
+  bronze/silver freshness checks
+
+streaming_data_quality (every 15 min)
+  not-null checks
+  duplicate checks
+  recent activity checks
+
+streaming_cost_governance (hourly)
+  warehouse guardrails
+  credit threshold signal
+
+streaming_ops_report (daily 09:00)
+  operational summary
+
+streaming_backfill (manual)
+  rebuild Silver/Gold from Bronze history
+
+streaming_recovery (manual)
+  recover connector and validate freshness
 ```
 
 ---
@@ -92,30 +109,28 @@ Airflow owns **execution**, not business logic.
 
 ```python
 with DAG(
-    dag_id="noaa_to_snowflake_bronze",
+    dag_id="streaming_healthcheck",
     ...
 ) as dag:
-    ingest = PythonOperator(
-        task_id="ingest_noaa_observations",
+    connector_health = PythonOperator(
+        task_id="check_connector_status",
         ...
     )
 
-    silver = EmptyOperator(task_id="Trigger_DBT_Silver")
-    gold = EmptyOperator(task_id="Trigger_DBT_Gold")
+    freshness = PythonOperator(
+        task_id="check_streaming_freshness",
+        ...
+    )
 
-    ingest >> silver >> gold
+    connector_health >> freshness
 ```
-
-### Airflow Graph
-
-![img.png](.images/airflow_graph.png)
 
 ## Configuration-driven Philosophy
 
 > **Inform credentials once. Build and run everything from code.**
 
 - Infrastructure via Terraform
-- Ingestion orchestrated programmatically
+- Connector provisioning and updates via scripts/Airflow service layer
 - Local environment lifecycle managed with `make`
 - No manual Airflow configuration steps for core flow
 - No manual Snowflake object creation
@@ -127,21 +142,25 @@ The system is **configuration-driven**: changing sources or targets is a control
 ## High-Level Architecture
 
 ```yml
-NOAA Source (NYC)  ───────────┐
-   │                          │
-   │  Trading observations    │
-   ▼                          │
-Ingestion Layer               │
-   │                          │
-   │  Load raw data           │
-   ▼                          ┼──► Airflow Orchestrator
-Snowflake                     │
-   ├── BRONZE                 │
-   ├── SILVER                 │
-   └── GOLD                   │
-   │                          │
-   ▼                          │
-BI / Analytics  ◄─────────────┘
+Binance WebSocket Producer  ──────────────┐
+   │                                      │
+   │ trade events (JSON)                  │
+   ▼                                      │
+Kafka topic (crypto_trades)               │
+   │                                      │
+   ▼                                      │
+Kafka Connect Snowflake Sink ─────────────┼──► Snowflake BRONZE.TRADES_RAW
+                                          │
+Airflow Orchestrator ─────────────────────┤
+  - healthcheck                           │
+  - quality                               │
+  - governance / reporting / recovery     │
+                                          │
+Snowflake Dynamic Tables                  │
+  - SILVER.TRADES_CLEAN_DT                │
+  - GOLD.TRADES_1M_DT                     │
+                                          │
+BI / Analytics  ◄─────────────────────────┘
 ```
 
 ---
@@ -153,34 +172,21 @@ BI / Analytics  ◄─────────────┘
 ```bash
 Steps
 
-Lint Check  ────────────┐
-   ├── Ruff             │
-   │                    │
-   ▼                    │
-Formatting Check        │
-   ├── Black            │
-   │                    │
-   ▼                    │
-Validate DAG imports    │
-   ├── Airflow          ┼──► GitHub Actions
-   │                    │
-   ▼                    │
-Validate dbt            │
-   ├── SILVER           │
-   └── GOLD             │
-   │                    │
-   ▼                    │
-Analytics Ready ────────┘
+Lint Check (Ruff)  ─────┐
+Format Check (Black)    │
+Airflow DAG Import Test ┼──► GitHub Actions
+                        │
+Quality Gate Passed ────┘
 ```
 
 ---
 
 ## Ingestion Details
 
-- NOAA observations are ingested for New York City
-- Raw data lands in **BRONZE**
-- dbt models standardize and enrich in **SILVER**
-- Business metrics are published in **GOLD**
+- Binance WebSocket producer publishes trades to Kafka (`crypto_trades`)
+- Snowflake Kafka Sink writes raw payload into `TRADING_ANALYTICS.BRONZE.TRADES_RAW`
+- Dynamic Table `SILVER.TRADES_CLEAN_DT` parses/casts/deduplicates the stream
+- Dynamic Table `GOLD.TRADES_1M_DT` computes 1-minute aggregates for analytics
 
 ---
 
@@ -190,14 +196,18 @@ Snowflake resources are provisioned and managed by Terraform, including:
 
 - Warehouse configuration
 - Role and grants management
-- Database and schema setup for dbt layers
+- Database and schema setup for Bronze/Silver/Gold layers
 
 ```yml
 infra/remote/snowflake/
 ├── setup/
 │   ├── generate_terraform_user.sh
 │   ├── install_local_cli.sh
-│   └── roles.sql
+│   ├── roles.sql
+│   └── streaming/
+│       ├── 00_create_schemas.sql
+│       ├── 10_silver_trades_clean_dt.sql
+│       └── 20_gold_trades_1m_dt.sql
 │
 ├── warehouse.tf
 ├── grants.tf
@@ -213,36 +223,35 @@ infra/remote/snowflake/
 
 ```yml
 infra/local
-├── postgres/
-├── airbyte/
-└── airflow/
+├── airflow/
+├── kafka-connect/
+└── websocket/
 ```
 
-### Postgres configuration-driven flow
+### Kafka Connect flow
 
 ```yml
-└── init/
-    ├── 01_wal_level_setup.sql   # Logical replication settings
-    ├── 02_init_retail_oltp.sql  # Local source schema bootstrap (legacy filename)
-    ├── 03_cdc.sql               # CDC support
-    └── 05_airbyte_user.sql      # Airbyte user and grants
+make infra.start-kafka-connect
+   │
+   ▼
+Start Zookeeper + Kafka + Kafka Connect
+   │
+   ▼
+make infra.configure-snowflake-kafka-sink
+   │
+   ▼
+Connector snowflake-trades-sink writes to BRONZE.TRADES_RAW
 ```
 
-### Airbyte configuration-driven flow
+### Full runtime flow
 
 ```yml
-start_airbyte.sh             ──────────────┐
-   ├── Start Airbyte local stack           │
-   │                                       │
-   ▼                                       │
-setup_credentials.sh                       │
-setup_postgres_source.sh                   │
-setup_snowflake_destination.sh             │
-generate_ingestion_json.sh                 │
-create_connections.sh                      │
-   │                                       │
-   ▼                                       │
-Start Airflow  ◄───────────────────────────┘
+make infra.up-all
+   │
+   ├── start Airflow stack
+   ├── start Kafka + Connect stack
+   ├── configure Snowflake sink
+   └── start websocket producer container
 ```
 
 ### Airflow orchestrator
@@ -252,30 +261,18 @@ Container starts  ──────────────┐
    │                            │
    ▼                            │
 Load DAGs                       │
-   ├── Bronze ingestion         │
-   ├── Silver transformation    │
-   └── Gold transformation      │
+   ├── Bootstrap/Recovery       │
+   ├── Healthcheck/Quality      │
+   └── Governance/Reporting     │
    ▼                            │
-NYC trading metrics ready ◄─────┘
+Streaming operations ready ◄────┘
 ```
 
 ## Trading Business Questions
 
-The pipeline is designed to answer trading analytics questions for New York City, such as:
+The pipeline is designed to answer practical streaming questions, such as:
 
-- How many days did it rain in NYC per month?
-- What is total monthly precipitation in NYC?
-- How does rainfall vary by season?
-- Which months are above historical rainfall average?
-
-## dbt Strategy
-
-dbt is executed via **CLI orchestration**, intentionally simple:
-
-| Approach         | Reason                     |
-|------------------|----------------------------|
-| CLI-based dbt    | Low complexity, easy CI/CD |
-| No Cosmos        | Avoid DAG explosion        |
-| Layer-level runs | Clear failure domains      |
-
----
+- Is ingestion live right now, or stalled?
+- What is trade activity by symbol per minute?
+- How fast is Silver/Gold refresh relative to incoming trades?
+- Are there data quality issues (nulls, duplicates, inactivity)?
