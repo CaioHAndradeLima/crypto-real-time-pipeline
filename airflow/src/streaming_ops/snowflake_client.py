@@ -54,16 +54,14 @@ class SnowflakeClient:
             )
 
     def assert_silver_lag(self, max_lag_seconds: int = 600) -> None:
-        row = self.fetch_one(
-            """
+        row = self.fetch_one("""
             select datediff(
               second,
               max(ingested_at),
               convert_timezone('UTC', current_timestamp())::timestamp_ntz
             ) as lag_seconds
             from TRADING_ANALYTICS.SILVER.TRADES_CLEAN_DT
-            """
-        )
+            """)
         lag_seconds = row[0] if row else None
         if lag_seconds is None or lag_seconds > max_lag_seconds:
             raise RuntimeError(f"Silver lag too high: {lag_seconds} seconds")

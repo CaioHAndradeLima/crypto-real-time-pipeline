@@ -25,7 +25,9 @@ class StreamingConfig:
     def from_env(cls) -> "StreamingConfig":
         account = os.environ["SNOWFLAKE_ACCOUNT"]
         organization = os.environ["SNOWFLAKE_ORGANIZATION_NAME"]
-        account_identifier = os.getenv("SNOWFLAKE_ACCOUNT_IDENTIFIER", f"{organization}-{account}")
+        account_identifier = os.getenv(
+            "SNOWFLAKE_ACCOUNT_IDENTIFIER", f"{organization}-{account}"
+        )
 
         return cls(
             connect_url=os.getenv("CONNECT_URL", "http://host.docker.internal:8083"),
@@ -40,7 +42,9 @@ class StreamingConfig:
             ),
             snowflake_user=os.environ["SNOWFLAKE_USER"],
             snowflake_private_key=os.environ["SNOWFLAKE_PRIVATE_KEY"],
-            snowflake_private_key_passphrase=os.getenv("SNOWFLAKE_PRIVATE_KEY_PASSPHRASE", ""),
+            snowflake_private_key_passphrase=os.getenv(
+                "SNOWFLAKE_PRIVATE_KEY_PASSPHRASE", ""
+            ),
             snowflake_password=os.environ["SNOWFLAKE_PASSWORD"],
             snowflake_database=os.getenv("SNOWFLAKE_DATABASE", "TRADING_ANALYTICS"),
             snowflake_schema="BRONZE",

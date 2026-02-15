@@ -19,4 +19,6 @@ class SlackNotifier:
         )
         with urlopen(req, timeout=10) as response:
             if response.status // 100 != 2:
-                raise RuntimeError(f"Slack webhook failed with status {response.status}")
+                raise RuntimeError(
+                    f"Slack webhook failed with status {response.status}"
+                )
