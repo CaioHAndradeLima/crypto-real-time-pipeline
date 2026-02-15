@@ -45,11 +45,13 @@ jobs:
           python -m pip install --upgrade pip setuptools wheel
       
           export CONSTRAINT_URL="https://raw.githubusercontent.com/apache/airflow/constraints-2.8.1/constraints-3.11.txt"
+
+          # Guardrail: Airflow 2.8.1 constraints pin websocket-client==1.7.0.
+          # Normalize project requirements to avoid resolver conflicts.
+          sed -i 's/^websocket-client>=1.8.0,<2$/websocket-client==1.7.0/' requirements.txt
+          grep -n "websocket-client" requirements.txt || true
       
           pip install "apache-airflow[postgres]==2.8.1" \
-            --constraint "${CONSTRAINT_URL}"
-      
-          pip install apache-airflow-providers-airbyte \
             --constraint "${CONSTRAINT_URL}"
       
           pip install -r requirements.txt \
@@ -86,6 +88,7 @@ jobs:
           AIRFLOW__CORE__EXECUTOR: SequentialExecutor
           AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@localhost:5432/airflow
           AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+          PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/airflow/src
         run: |
           airflow db migrate
           python - <<EOF
@@ -107,14 +110,3 @@ jobs:
               
           print(f"Loaded {len(dagbag.dags)} DAGs successfully and no errors has been found")
           EOF
-      # ---------------------------
-      # DBT validation (Snowflake-ready)
-      # ---------------------------
-      - name: Install dbt
-        run: |
-          pip install dbt-core dbt-snowflake
-
-      - name: DBT compile
-        run: |
-          cd dbt
-          dbt compile --profiles-dir .

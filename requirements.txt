@@ -1,9 +1,10 @@
-# HTTP client (Airbyte API)
+# HTTP client
 requests>=2.31.0,<3
 
 # Streaming producer
 kafka-python>=2.0.2,<3
-websocket-client>=1.8.0,<2
+# Keep aligned with Airflow 2.8.1 constraints used in CI.
+websocket-client==1.7.0
 
 # Snowflake
 snowflake-connector-python==3.6.0
