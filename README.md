@@ -1,6 +1,6 @@
 # Crypto Trading ELT Real Time Pipeline
 
-[![Trading Data Pipeline](https://github.com/CaioHAndradeLima/retail-data-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/CaioHAndradeLima/retail-data-pipeline/actions/workflows/ci.yml)
+[![Trading Data Pipeline](https://github.com/CaioHAndradeLima/crypto-real-time-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/CaioHAndradeLima/crypto-real-time-pipeline/actions/workflows/ci.yml)
 
 > Build a production-style ELT streaming platform that ingests Binance trades in real time and serves curated analytics in Snowflake.
 
@@ -167,7 +167,7 @@ BI / Analytics  ◄────────────────────�
 
 ## Continuous integration Flow
 
-[![Trading Data Pipeline](https://github.com/CaioHAndradeLima/retail-data-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/CaioHAndradeLima/retail-data-pipeline/actions/workflows/ci.yml)
+[![Trading Data Pipeline](https://github.com/CaioHAndradeLima/crypto-real-time-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/CaioHAndradeLima/crypto-real-time-pipeline/actions/workflows/ci.yml)
 
 ```bash
 Steps
