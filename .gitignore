@@ -52,5 +52,5 @@ infra/remote/aws/terraform-user-keys
 # dbt
 dbt/logs
 
-# unnecessary packages
-airflow/src
+# Airflow local runtime artifacts only (keep airflow/src tracked for project code)
+airflow/.airflow/

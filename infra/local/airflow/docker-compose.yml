@@ -28,6 +28,7 @@ services:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres-airflow/airflow
       AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      PYTHONPATH: /opt/airflow/src
     command: >
       bash -c "
       airflow db migrate && airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com; \ 
@@ -53,9 +54,10 @@ services:
       AIRFLOW__CORE__LOAD_EXAMPLES: "false"
       AIRFLOW__CORE__FERNET_KEY: ""
       AIRFLOW__WEBSERVER__EXPOSE_CONFIG: "true"
+      PYTHONPATH: /opt/airflow/src
     volumes:
       - ${PROJECT_ROOT}/airflow/dags:/opt/airflow/dags
-      - ${PROJECT_ROOT}/src:/opt/airflow/dags/src
+      - ${PROJECT_ROOT}/airflow/src:/opt/airflow/src
       - airflow-logs:/opt/airflow/logs
 
     ports:
@@ -77,9 +79,10 @@ services:
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres-airflow/airflow
       AIRFLOW__CORE__LOAD_EXAMPLES: "false"
       AIRFLOW__CORE__FERNET_KEY: ""
+      PYTHONPATH: /opt/airflow/src
     volumes:
       - ${PROJECT_ROOT}/airflow/dags:/opt/airflow/dags
-      - ${PROJECT_ROOT}/src:/opt/airflow/dags/src
+      - ${PROJECT_ROOT}/airflow/src:/opt/airflow/src
       - airflow-logs:/opt/airflow/logs
       - ${PROJECT_ROOT}/infra/local/airflow/validation:/opt/airflow/validation
     restart: always
