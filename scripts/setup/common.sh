@@ -14,7 +14,7 @@ SNOWFLAKE_PRIVATE_KEY_PASSPHRASE="${SNOWFLAKE_PRIVATE_KEY_PASSPHRASE:-}"
 
 load_env() {
   if [ ! -f "$ENV_FILE" ]; then
-    echo "Missing $ENV_FILE. Run scripts/setup/01_create_env.sh first."
+    echo "Missing $ENV_FILE. Run 'make setup.create-env' first."
     exit 1
   fi
 

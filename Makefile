@@ -4,81 +4,92 @@ SHELL := /bin/bash
 
 .PHONY: \
 	help help-setup help-infra \
-	setup.create-env setup.provision-snowflake setup.local-development-environment \
-	infra.configure-airbyte infra.start-airflow infra.start-websocket \
-	infra.start-kafka-connect infra.configure-snowflake-kafka-sink infra.generate-snowflake-keypair infra.up infra.up-all infra.down \
-	infra.create-streaming-dynamic-tables \
-	create-env provision-snowflake setup-local-environment \
-	configure-airbyte start-airflow start-websocket \
-	start-kafka-connect configure-snowflake-kafka-sink generate-snowflake-keypair create-streaming-dynamic-tables start-local-infra run-local-environment start-all-infra \
-	stop-local-infra stop-local-containers
+	setup.check-dev-deps setup.create-env setup.provision-snowflake setup.generate-keypair setup.create-dynamic-tables \
+	setup.from-scratch \
+	infra.start-airflow infra.start-kafka-connect infra.configure-snowflake-kafka-sink infra.start-websocket \
+	infra.up infra.up-all infra.from-scratch infra.down \
+	create-env provision-snowflake start-airflow start-kafka-connect configure-snowflake-kafka-sink start-websocket \
+	start-local-infra start-all-infra run-local-environment stop-local-infra stop-local-containers
 
 help: ## Show available target groups
-	@echo "Local Development Environment Setup"
+	@echo "Setup Commands"
 	@$(MAKE) --no-print-directory help-setup
 	@echo ""
-	@echo "Local Infra Actions"
+	@echo "Infra Commands"
 	@$(MAKE) --no-print-directory help-infra
 
 help-setup:
-	@awk 'BEGIN {FS = ":.*##"} /^setup\.[a-zA-Z0-9._-]+:.*##/ {printf "  \033[36m%-36s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@awk 'BEGIN {FS = ":.*##"} /^setup\.[a-zA-Z0-9._-]+:.*##/ {printf "  \033[36m%-34s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 help-infra:
-	@awk 'BEGIN {FS = ":.*##"} /^infra\.[a-zA-Z0-9._-]+:.*##/ {printf "  \033[36m%-36s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@awk 'BEGIN {FS = ":.*##"} /^infra\.[a-zA-Z0-9._-]+:.*##/ {printf "  \033[36m%-34s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+
+# -----------------------------
+# Setup
+# -----------------------------
+
+setup.check-dev-deps: ## Verify/install local developer dependencies (Python3, Docker, Terraform, SnowSQL)
+	bash ./scripts/setup/check_dev_dependencies.sh
 
 setup.create-env: ## Create .env with Snowflake and local settings
 	bash ./scripts/setup/create_env.sh
 
-setup.provision-snowflake: ## Provision Snowflake infrastructure via Terraform
+setup.provision-snowflake: ## Provision Snowflake resources (roles, database, schemas, warehouse, grants)
 	bash ./scripts/setup/create_snowflake_role.sh
 	bash ./scripts/setup/provision_snowflake_remote.sh
 
-setup.local-development-environment: ## Run full setup (env -> snowflake)
-	$(MAKE) setup.create-env
-	$(MAKE) setup.provision-snowflake
-
-infra.configure-airbyte: ## Configure Airbyte source/destination/connections
-	bash ./scripts/infra/configure_airbyte.sh
-
-infra.start-airflow: ## Start local Airflow
-	bash ./scripts/infra/start_airflow.sh
-
-infra.start-websocket: ## Start websocket producer container
-	bash ./scripts/infra/start_web_socket.sh
-
-infra.start-kafka-connect: ## Start local Kafka + Kafka Connect
-	bash ./scripts/infra/start_kafka_connect.sh
-
-infra.configure-snowflake-kafka-sink: ## Register Snowflake sink connector for trade topic
-	bash ./scripts/infra/configure_snowflake_kafka_sink.sh
-
-infra.generate-snowflake-keypair: ## Generate key-pair auth, alter Snowflake user, and update .env
+setup.generate-keypair: ## Generate Snowflake key-pair auth and update .env
 	bash ./scripts/infra/generate_snowflake_keypair.sh
 
-infra.create-streaming-dynamic-tables: ## Create/replace Snowflake Dynamic Tables for streaming silver/gold
+setup.create-dynamic-tables: ## Create/replace streaming Dynamic Tables (silver/gold)
 	bash ./scripts/infra/create_streaming_dynamic_tables.sh
 
-infra.up: ## Start local infra (airbyte -> configure -> airflow)
+setup.from-scratch: ## Full setup from zero for a new machine/account
+	$(MAKE) setup.check-dev-deps
+	$(MAKE) setup.create-env
+	$(MAKE) setup.provision-snowflake
+	$(MAKE) setup.generate-keypair
+	$(MAKE) setup.create-dynamic-tables
+
+# -----------------------------
+# Infra Run
+# -----------------------------
+
+infra.start-airflow: ## Start local Airflow stack
+	bash ./scripts/infra/start_airflow.sh
+
+infra.start-kafka-connect: ## Start Kafka + Kafka Connect stack
+	bash ./scripts/infra/start_kafka_connect.sh
+
+infra.configure-snowflake-kafka-sink: ## Register/update Snowflake sink connector
+	bash ./scripts/infra/configure_snowflake_kafka_sink.sh
+
+infra.start-websocket: ## Start Binance websocket producer container
+	bash ./scripts/infra/start_web_socket.sh
+
+infra.up: ## Start baseline infra (Airflow)
 	bash ./scripts/infra/start_local_infra.sh
 
-infra.up-all: ## Start full local infra (infra.up + kafka connect + snowflake sink + websocket)
+infra.up-all: ## Start full runtime infra (airflow + kafka/connect + sink + websocket)
 	bash ./scripts/infra/start_all_infra.sh
+
+infra.from-scratch: ## Full infra run from zero for a new machine/account
+	$(MAKE) infra.down
+	$(MAKE) infra.up-all
 
 infra.down: ## Stop local containers and remove local volumes
 	bash ./scripts/infra/stop_local_infra.sh
 
+# -----------------------------
 # Backward-compatible aliases
+# -----------------------------
+
 create-env: setup.create-env
 provision-snowflake: setup.provision-snowflake
-setup-local-environment: setup.local-development-environment
-
-configure-airbyte: infra.configure-airbyte
 start-airflow: infra.start-airflow
-start-websocket: infra.start-websocket
 start-kafka-connect: infra.start-kafka-connect
 configure-snowflake-kafka-sink: infra.configure-snowflake-kafka-sink
-generate-snowflake-keypair: infra.generate-snowflake-keypair
-create-streaming-dynamic-tables: infra.create-streaming-dynamic-tables
+start-websocket: infra.start-websocket
 start-local-infra: infra.up
 run-local-environment: infra.up
 start-all-infra: infra.up-all
