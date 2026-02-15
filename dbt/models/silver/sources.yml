@@ -1,8 +1,0 @@
-version: 2
-
-sources:
-  - name: silver
-    database: TRADING_ANALYTICS
-    schema: SILVER
-    tables:
-      - name: trading_observations_clean

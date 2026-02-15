@@ -1,3 +1,14 @@
 #!/bin/bash
+set -euo pipefail
 
-python -m src.ingestion.binance_ws_producer
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=./common.sh
+source "$SCRIPT_DIR/common.sh"
+
+require_env_file
+
+echo "Start websocket producer container"
+docker compose \
+  --env-file "$ENV_FILE" \
+  -f "$KAFKA_CONNECT_COMPOSE_FILE" \
+  up -d binance-ws-producer

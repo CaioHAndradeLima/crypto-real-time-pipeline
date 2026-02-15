@@ -74,5 +74,19 @@ services:
         fi
         /etc/confluent/docker/run
 
+  binance-ws-producer:
+    build:
+      context: ../../..
+      dockerfile: infra/local/websocket/Dockerfile
+    container_name: local-binance-ws-producer
+    restart: unless-stopped
+    depends_on:
+      - kafka
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      KAFKA_TOPIC_TRADES: ${KAFKA_TOPIC_TRADES:-crypto_trades}
+      BINANCE_SYMBOLS: ${BINANCE_SYMBOLS:-btcusdt}
+    command: ["python", "-m", "src.ingestion.binance_ws_producer"]
+
 volumes:
   kafka-connect-plugins:

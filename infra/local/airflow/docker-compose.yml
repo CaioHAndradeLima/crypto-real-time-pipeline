@@ -32,7 +32,6 @@ services:
       bash -c "
       airflow db migrate && airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com; \ 
       chmod +x /opt/airflow/init_connections.sh; /opt/airflow/init_connections.sh; \
-      python -m pip install --upgrade pip; python -m pip install dbt-core dbt-snowflake; \
       chmod +x /opt/airflow/create_pools.sh; /opt/airflow/create_pools.sh; \
       "
     volumes:
@@ -57,7 +56,6 @@ services:
     volumes:
       - ${PROJECT_ROOT}/airflow/dags:/opt/airflow/dags
       - ${PROJECT_ROOT}/src:/opt/airflow/dags/src
-      - ${PROJECT_ROOT}/dbt:/opt/airflow/dbt
       - airflow-logs:/opt/airflow/logs
 
     ports:
@@ -83,7 +81,6 @@ services:
       - ${PROJECT_ROOT}/airflow/dags:/opt/airflow/dags
       - ${PROJECT_ROOT}/src:/opt/airflow/dags/src
       - airflow-logs:/opt/airflow/logs
-      - ${PROJECT_ROOT}/dbt:/opt/airflow/dbt
       - ${PROJECT_ROOT}/infra/local/airflow/validation:/opt/airflow/validation
     restart: always
 

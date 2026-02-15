@@ -1,8 +1,0 @@
-version: 2
-
-sources:
-  - name: bronze
-    database: TRADING_ANALYTICS
-    schema: BRONZE
-    tables:
-      - name: OBSERVATIONS
