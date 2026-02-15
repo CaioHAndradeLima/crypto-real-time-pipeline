@@ -68,7 +68,7 @@ services:
             fi
             sleep 5
           done
-          if [ "$ok" -ne 1 ]; then
+          if [ "$$ok" -ne 1 ]; then
             echo "Snowflake connector plugin install failed after retries. Starting Kafka Connect anyway."
           fi
         fi

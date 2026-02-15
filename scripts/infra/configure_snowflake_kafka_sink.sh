@@ -53,16 +53,17 @@ fi
 
 echo "Waiting for Kafka Connect at $CONNECT_URL"
 is_up=0
-for _ in $(seq 1 60); do
-  if curl -fsS "$CONNECT_URL/connectors" >/dev/null; then
+attempts=120
+for _ in $(seq 1 "$attempts"); do
+  if curl -fsS "$CONNECT_URL/connectors" >/dev/null 2>&1; then
     is_up=1
     break
   fi
-  sleep 2
+  sleep 1
 done
 
 if [ "$is_up" -ne 1 ]; then
-  echo "Kafka Connect is not reachable at $CONNECT_URL"
+  echo "Kafka Connect is not reachable at $CONNECT_URL after ${attempts}s"
   exit 1
 fi
 
