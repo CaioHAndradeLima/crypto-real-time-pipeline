@@ -89,6 +89,15 @@ jobs:
           AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@localhost:5432/airflow
           AIRFLOW__CORE__LOAD_EXAMPLES: "false"
           PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/airflow/src
+          SNOWFLAKE_ACCOUNT: CI_ACCOUNT
+          SNOWFLAKE_ORGANIZATION_NAME: CI_ORG
+          SNOWFLAKE_USER: CI_USER
+          SNOWFLAKE_PRIVATE_KEY: CI_PRIVATE_KEY
+          SNOWFLAKE_PASSWORD: CI_PASSWORD
+          SNOWFLAKE_ROLE: ACCOUNTADMIN
+          SNOWFLAKE_WAREHOUSE: TRADING_WH
+          SNOWFLAKE_DATABASE: TRADING_ANALYTICS
+          SNOWFLAKE_SCHEMA: BRONZE
         run: |
           airflow db migrate
           python - <<EOF
