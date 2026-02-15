@@ -28,6 +28,19 @@ Airflow should orchestrate operations around the stream, not individual records.
 
 If any check fails, the DAG fails and triggers alerting policies.
 
+### Additional operational DAGs
+
+- `streaming_data_quality` (every 15 minutes): null, duplicate, and activity checks.
+- `streaming_recovery` (manual): connector recovery and post-recovery validation.
+- `streaming_backfill` (manual): rebuild dynamic tables from bronze history.
+- `streaming_cost_governance` (hourly): enforce warehouse autosuspend/autoresume and credit guardrail.
+- `streaming_ops_report` (daily): send summary metrics.
+
+## Slack failure alerts
+
+Set `SLACK_WEBHOOK_URL` in `.env`.  
+All streaming DAG tasks use an `on_failure_callback` that sends failure details to Slack.
+
 ## Local startup commands
 
 ```bash

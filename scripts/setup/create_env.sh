@@ -12,27 +12,61 @@ echo ""
 
 ask() {
   local prompt="$1"
-  local secret="${2:-false}"
+  local default_value="${2:-}"
+  local secret="${3:-false}"
+  local allow_empty="${4:-false}"
   local value=""
+  local prompt_with_default="$prompt"
+
+  if [ -n "$default_value" ]; then
+    prompt_with_default="$prompt [$default_value]"
+  fi
 
   if [ "$secret" = "true" ]; then
-    read -r -s -p "$prompt: " value
+    read -r -s -p "$prompt_with_default: " value
+    echo "" >&2
   else
-    read -r -p "$prompt: " value
+    read -r -p "$prompt_with_default: " value
   fi
 
   if [ -z "$value" ]; then
-    echo "Value cannot be empty."
+    value="$default_value"
+  fi
+
+  if [ -z "$value" ] && [ "$allow_empty" != "true" ]; then
+    echo "Value cannot be empty when no default is provided."
     exit 1
   fi
 
   printf "%s" "$value"
 }
 
-SNOWFLAKE_ACCOUNT="$(ask "Snowflake account (example: YS80657)")"
-SNOWFLAKE_USER="$(ask "Snowflake user")"
-SNOWFLAKE_ORGANIZATION_NAME="$(ask "Snowflake organization name")"
-SNOWFLAKE_PASSWORD="$(ask "Snowflake password" true)"
+# Reuse previous .env values as defaults when available.
+if [ -f "$ENV_FILE" ]; then
+  # shellcheck source=/dev/null
+  source "$ENV_FILE"
+fi
+
+DEFAULT_SNOWFLAKE_ACCOUNT="${SNOWFLAKE_ACCOUNT:-}"
+DEFAULT_SNOWFLAKE_USER="${SNOWFLAKE_USER:-}"
+DEFAULT_SNOWFLAKE_ORG="${SNOWFLAKE_ORGANIZATION_NAME:-}"
+DEFAULT_SNOWFLAKE_PASSWORD="${SNOWFLAKE_PASSWORD:-}"
+DEFAULT_KAFKA_TOPIC_TRADES="${KAFKA_TOPIC_TRADES:-crypto_trades}"
+DEFAULT_BINANCE_SYMBOLS="${BINANCE_SYMBOLS:-btcusdt}"
+
+SNOWFLAKE_ACCOUNT="$(ask "Snowflake account (example: YS80657)" "$DEFAULT_SNOWFLAKE_ACCOUNT")"
+SNOWFLAKE_USER="$(ask "Snowflake user" "$DEFAULT_SNOWFLAKE_USER")"
+SNOWFLAKE_ORGANIZATION_NAME="$(ask "Snowflake organization name" "$DEFAULT_SNOWFLAKE_ORG")"
+SNOWFLAKE_PASSWORD="$(ask "Snowflake password" "$DEFAULT_SNOWFLAKE_PASSWORD" true)"
+SNOWFLAKE_WAREHOUSE="$(ask "Snowflake warehouse" "$SNOWFLAKE_WAREHOUSE")"
+SNOWFLAKE_TERRAFORM_WAREHOUSE="$(ask "Snowflake Terraform bootstrap warehouse" "${SNOWFLAKE_TERRAFORM_WAREHOUSE:-COMPUTE_WH}")"
+SNOWFLAKE_DATABASE="$(ask "Snowflake database" "$SNOWFLAKE_DATABASE")"
+SNOWFLAKE_ROLE="$(ask "Snowflake role" "$SNOWFLAKE_ROLE")"
+SNOWFLAKE_SCHEMA="$(ask "Snowflake schema" "$SNOWFLAKE_SCHEMA")"
+SNOWFLAKE_TRADES_RAW_TABLE="TRADES_RAW"
+KAFKA_TOPIC_TRADES="$(ask "Kafka topic for trades" "$DEFAULT_KAFKA_TOPIC_TRADES")"
+BINANCE_SYMBOLS="$(ask "Binance symbols (comma-separated)" "$DEFAULT_BINANCE_SYMBOLS")"
+SLACK_WEBHOOK_URL="$(ask "Slack webhook URL (optional)" "$SLACK_WEBHOOK_URL" false true)"
 
 if [ -f "$ENV_FILE" ]; then
   cp "$ENV_FILE" "$ENV_FILE.bak.$(date +%s)"
@@ -46,12 +80,15 @@ SNOWFLAKE_ORGANIZATION_NAME=$SNOWFLAKE_ORGANIZATION_NAME
 SNOWFLAKE_USER=$SNOWFLAKE_USER
 SNOWFLAKE_PASSWORD=$SNOWFLAKE_PASSWORD
 SNOWFLAKE_WAREHOUSE=$SNOWFLAKE_WAREHOUSE
+SNOWFLAKE_TERRAFORM_WAREHOUSE=$SNOWFLAKE_TERRAFORM_WAREHOUSE
 SNOWFLAKE_DATABASE=$SNOWFLAKE_DATABASE
 SNOWFLAKE_ROLE=$SNOWFLAKE_ROLE
 SNOWFLAKE_SCHEMA=$SNOWFLAKE_SCHEMA
 SNOWFLAKE_TRADES_RAW_TABLE=$SNOWFLAKE_TRADES_RAW_TABLE
 SNOWFLAKE_PRIVATE_KEY=$SNOWFLAKE_PRIVATE_KEY
 SNOWFLAKE_PRIVATE_KEY_PASSPHRASE=$SNOWFLAKE_PRIVATE_KEY_PASSPHRASE
+KAFKA_TOPIC_TRADES=$KAFKA_TOPIC_TRADES
+BINANCE_SYMBOLS=$BINANCE_SYMBOLS
 
 POSTGRES_USER=airflow
 POSTGRES_PASSWORD=airflow
@@ -66,6 +103,8 @@ TRADING_PG_PORT=5432
 TRADING_PG_DB=trading_prod
 TRADING_PG_USER=trading_user
 TRADING_PG_PASSWORD=trading_password
+
+SLACK_WEBHOOK_URL=$SLACK_WEBHOOK_URL
 EOF
 
 echo ".env created at $ENV_FILE"

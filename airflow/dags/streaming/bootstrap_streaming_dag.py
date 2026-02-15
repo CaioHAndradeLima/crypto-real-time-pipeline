@@ -3,9 +3,15 @@ from datetime import datetime
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 
+from streaming_ops.airflow_callbacks import slack_task_failure_callback
 from streaming_ops.bootstrap_service import StreamingBootstrapService
 
-DEFAULT_ARGS = {"owner": "data-engineering", "depends_on_past": False, "retries": 0}
+DEFAULT_ARGS = {
+    "owner": "data-engineering",
+    "depends_on_past": False,
+    "retries": 0,
+    "on_failure_callback": slack_task_failure_callback,
+}
 bootstrap_service = StreamingBootstrapService()
 
 

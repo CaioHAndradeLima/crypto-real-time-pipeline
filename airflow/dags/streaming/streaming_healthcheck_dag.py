@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.operators.python import PythonOperator
+from streaming_ops.airflow_callbacks import slack_task_failure_callback
 from streaming_ops.healthcheck_service import StreamingHealthcheckService
 
 DEFAULT_ARGS = {
@@ -9,6 +10,7 @@ DEFAULT_ARGS = {
     "depends_on_past": False,
     "retries": 1,
     "retry_delay": timedelta(minutes=2),
+    "on_failure_callback": slack_task_failure_callback,
 }
 healthcheck_service = StreamingHealthcheckService()
 

@@ -46,10 +46,7 @@ class KafkaConnectClient:
                 raise RuntimeError(f"Connector configure failed with status {response.status}")
 
     def assert_connector_running(self) -> None:
-        status_url = f"{self.config.connect_url}/connectors/{self.config.connector_name}/status"
-        with urlopen(status_url, timeout=10) as response:
-            payload = json.loads(response.read().decode("utf-8"))
-
+        payload = self.get_status()
         connector_state = payload.get("connector", {}).get("state")
         if connector_state != "RUNNING":
             raise RuntimeError(f"Connector state is {connector_state}, expected RUNNING")
@@ -61,3 +58,17 @@ class KafkaConnectClient:
         for task in tasks:
             if task.get("state") != "RUNNING":
                 raise RuntimeError(f"Connector task not running: {task}")
+
+    def get_status(self) -> dict:
+        status_url = f"{self.config.connect_url}/connectors/{self.config.connector_name}/status"
+        with urlopen(status_url, timeout=10) as response:
+            return json.loads(response.read().decode("utf-8"))
+
+    def delete_connector(self) -> None:
+        req = Request(
+            f"{self.config.connect_url}/connectors/{self.config.connector_name}",
+            method="DELETE",
+        )
+        with urlopen(req, timeout=15) as response:
+            if response.status not in (200, 202, 204):
+                raise RuntimeError(f"Connector delete failed with status {response.status}")

@@ -43,8 +43,8 @@ class StreamingConfig:
             snowflake_private_key_passphrase=os.getenv("SNOWFLAKE_PRIVATE_KEY_PASSPHRASE", ""),
             snowflake_password=os.environ["SNOWFLAKE_PASSWORD"],
             snowflake_database=os.getenv("SNOWFLAKE_DATABASE", "TRADING_ANALYTICS"),
-            snowflake_schema=os.getenv("SNOWFLAKE_SCHEMA", "BRONZE"),
+            snowflake_schema="BRONZE",
             snowflake_role=os.environ["SNOWFLAKE_ROLE"],
             snowflake_warehouse=os.getenv("SNOWFLAKE_WAREHOUSE", "TRADING_WH"),
-            snowflake_trades_raw_table=os.getenv("SNOWFLAKE_TRADES_RAW_TABLE", "TRADES_RAW"),
+            snowflake_trades_raw_table="TRADES_RAW",
         )

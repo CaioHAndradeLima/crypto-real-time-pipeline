@@ -27,41 +27,40 @@ class SnowflakeClient:
         finally:
             conn.close()
 
-    def assert_recent_bronze_rows(self, window_minutes: int = 5) -> None:
+    def fetch_one(self, query: str):
         conn = self._connect()
         try:
             with conn.cursor() as cur:
-                cur.execute(
-                    f"""
-                    select count(*) as recent_rows
-                    from TRADING_ANALYTICS.BRONZE.TRADES_RAW
-                    where to_timestamp_ntz(record_content:T::number, 3) >= dateadd('minute', -{window_minutes}, current_timestamp())
-                    """
-                )
-                recent_rows = cur.fetchone()[0]
-                if recent_rows is None or recent_rows <= 0:
-                    raise RuntimeError(
-                        f"No recent rows in BRONZE.TRADES_RAW for last {window_minutes} minutes"
-                    )
+                cur.execute(query)
+                return cur.fetchone()
         finally:
             conn.close()
 
+    def assert_recent_bronze_rows(self, window_minutes: int = 5) -> None:
+        row = self.fetch_one(
+            f"""
+            select count(*) as recent_rows
+            from TRADING_ANALYTICS.BRONZE.TRADES_RAW
+            where to_timestamp_ntz(record_content:T::number, 3) >= dateadd('minute', -{window_minutes}, current_timestamp())
+            """
+        )
+        recent_rows = row[0] if row else None
+        if recent_rows is None or recent_rows <= 0:
+            raise RuntimeError(
+                f"No recent rows in BRONZE.TRADES_RAW for last {window_minutes} minutes"
+            )
+
     def assert_silver_lag(self, max_lag_seconds: int = 600) -> None:
-        conn = self._connect()
-        try:
-            with conn.cursor() as cur:
-                cur.execute(
-                    """
-                    select datediff(
-                      'second',
-                      max(ingested_at),
-                      current_timestamp()
-                    ) as lag_seconds
-                    from TRADING_ANALYTICS.SILVER.TRADES_CLEAN_DT
-                    """
-                )
-                lag_seconds = cur.fetchone()[0]
-                if lag_seconds is None or lag_seconds > max_lag_seconds:
-                    raise RuntimeError(f"Silver lag too high: {lag_seconds} seconds")
-        finally:
-            conn.close()
+        row = self.fetch_one(
+            """
+            select datediff(
+              'second',
+              max(ingested_at),
+              current_timestamp()
+            ) as lag_seconds
+            from TRADING_ANALYTICS.SILVER.TRADES_CLEAN_DT
+            """
+        )
+        lag_seconds = row[0] if row else None
+        if lag_seconds is None or lag_seconds > max_lag_seconds:
+            raise RuntimeError(f"Silver lag too high: {lag_seconds} seconds")
