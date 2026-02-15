@@ -80,6 +80,10 @@ infra.from-scratch: ## Full infra run from zero for a new machine/account
 infra.down: ## Stop local containers and remove local volumes
 	bash ./scripts/infra/stop_local_infra.sh
 
+infra.restart: ## Restart infra calling infra.down, infra.up-all
+	$(MAKE) infra.down
+	$(MAKE) infra.up-all
+
 # -----------------------------
 # Backward-compatible aliases
 # -----------------------------

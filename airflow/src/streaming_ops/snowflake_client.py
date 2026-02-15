@@ -37,17 +37,20 @@ class SnowflakeClient:
             conn.close()
 
     def assert_recent_bronze_rows(self, window_minutes: int = 5) -> None:
+        minutes = max(int(window_minutes), 1)
+        query = (
+            "select count(*) as recent_rows "
+            "from TRADING_ANALYTICS.BRONZE.TRADES_RAW "
+            f"where to_timestamp_ntz(record_content:T::number, 3) >= "
+            f"dateadd('minute', -{minutes}, current_timestamp())"
+        )
         row = self.fetch_one(
-            f"""
-            select count(*) as recent_rows
-            from TRADING_ANALYTICS.BRONZE.TRADES_RAW
-            where to_timestamp_ntz(record_content:T::number, 3) >= dateadd('minute', -{window_minutes}, current_timestamp())
-            """
+            query
         )
         recent_rows = row[0] if row else None
         if recent_rows is None or recent_rows <= 0:
             raise RuntimeError(
-                f"No recent rows in BRONZE.TRADES_RAW for last {window_minutes} minutes"
+                f"No recent rows in BRONZE.TRADES_RAW for last {minutes} minutes"
             )
 
     def assert_silver_lag(self, max_lag_seconds: int = 600) -> None:
