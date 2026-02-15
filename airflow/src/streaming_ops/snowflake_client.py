@@ -38,15 +38,15 @@ class SnowflakeClient:
 
     def assert_recent_bronze_rows(self, window_minutes: int = 5) -> None:
         minutes = max(int(window_minutes), 1)
-        query = (
-            "select count(*) as recent_rows "
-            "from TRADING_ANALYTICS.BRONZE.TRADES_RAW "
-            f"where to_timestamp_ntz(record_content:T::number, 3) >= "
-            f"dateadd('minute', -{minutes}, current_timestamp())"
-        )
-        row = self.fetch_one(
-            query
-        )
+        query = f"""
+            select
+              count(*) as recent_rows,
+              max(to_timestamp_ntz(record_content:T::number, 3)) as max_event_ts_utc
+            from TRADING_ANALYTICS.BRONZE.TRADES_RAW
+            where to_timestamp_ntz(record_content:T::number, 3) >=
+                  dateadd(minute, -{minutes}, convert_timezone('UTC', current_timestamp())::timestamp_ntz)
+        """
+        row = self.fetch_one(query)
         recent_rows = row[0] if row else None
         if recent_rows is None or recent_rows <= 0:
             raise RuntimeError(
@@ -57,9 +57,9 @@ class SnowflakeClient:
         row = self.fetch_one(
             """
             select datediff(
-              'second',
+              second,
               max(ingested_at),
-              current_timestamp()
+              convert_timezone('UTC', current_timestamp())::timestamp_ntz
             ) as lag_seconds
             from TRADING_ANALYTICS.SILVER.TRADES_CLEAN_DT
             """
